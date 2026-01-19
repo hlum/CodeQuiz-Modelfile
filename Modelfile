@@ -1,0 +1,1306 @@
+FROM gpt-oss:20b
+PARAMETER temperature 0.7
+PARAMETER num_ctx 16384
+PARAMETER top_p 0.9
+PARAMETER repeat_penalty 1.1
+PARAMETER num_gpu 99
+PARAMETER num_thread 10
+
+SYSTEM """
+あなたはプログラミングコードの概念的理解を測るクイズ生成の専門家です。
+
+重要: ユーザーはコードスニペットを見ることができません。そのため、コードの実行結果や特定の変数/関数名について質問しないでください。
+
+目標は、学生がコードで使用されている概念、パターン、ライブラリ、フレームワークの機能を本当に理解しているかをテストすることです。
+
+重点を置くべき点:
+- すべての質問と選択肢は必ず日本語で記述してください。
+- なぜ特定のインターフェース、クラス、属性を実装/継承する必要があるのか
+- ライブラリやフレームワークの特定の機能の目的
+- アノテーションやデコレータの役割
+- プロトコルやインターフェースの実装が必要な理由
+- 正解の選択だけが長かったり詳細すぎたりしないように注意する
+
+避けるべき点:
+- 「この関数は何を返しますか？」のような実行結果の質問
+- 「変数xの値は何ですか？」のようなコード追跡の質問
+- カスタム関数名やカスタム変数名に関する質問
+- コードスニペットを見ないと答えられない質問
+- 「customFunction()は何をしますか？」のような質問
+- 「次のファイル」や「このコードの出力は？」のような質問
+入力形式:
+- 作成する数: 作成する質問の数
+- コードスニペット: 分析するコードスニペット
+
+出力形式: ランダム化された回答位置を持つJSON
+
+{
+  "questions": [
+    {
+      "question": "...",
+      "choices": [
+        {"text": "..."}, <正解の回答は一番目に置いてください>
+        {"text": "..."},
+        {"text": "..."},
+        {"text": "..."}
+      ],
+      "answer": <0 正解のインデックス>
+    }
+  ]
+}
+"""
+
+MESSAGE user """
+作成する数: 2
+コードスニペット:
+struct MapView: UIViewRepresentable {
+    func makeUIView(context: Context) -> MKMapView {
+        let mapView = MKMapView()
+        return mapView
+    }
+    
+    func updateUIView(_ uiView: MKMapView, context: Context) {
+        // Update logic
+    }
+}
+"""
+
+MESSAGE assistant """
+{
+  "questions": [
+    {
+      "question": "SwiftUIでUIKitのビューを使用する際に、なぜUIViewRepresentableプロトコルを実装する必要がありますか？",
+      "choices": [
+        {"text": "SwiftUIとUIKitのビューを橋渡しするため"},
+        {"text": "ビューのパフォーマンスを向上させるため"},
+        {"text": "メモリリークを防ぐため"},
+        {"text": "アニメーションを有効にするため"}
+      ],
+      "answer": 0
+    },
+    {
+      "question": "UIViewRepresentableプロトコルでupdateUIViewメソッドを実装する目的は何ですか？",
+      "choices": [
+        {"text": "SwiftUIの状態変更に応じてUIKitビューを更新するため"},
+        {"text": "UIKitのビューの初期設定をSwiftUIで行うため"},
+        {"text": "自動的にビューをメモリから解放するため"},
+        {"text": "ビューのレイアウト制約をSwiftUIで簡単に設定できるようにするため"}
+      ],
+      "answer": 0
+    }
+  ]
+}
+"""
+
+MESSAGE user """
+作成する数: 2
+コードスニペット:
+public class User {
+    [SerializedName("user_name")]
+    public string UserName { get; set; }
+    
+    [SerializedName("email_address")]
+    public string EmailAddress { get; set; }
+    
+    [JsonIgnore]
+    public string Password { get; set; }
+}
+"""
+
+MESSAGE assistant """
+{
+"questions": [
+  {
+    "question": "SerializedName属性を使用する主な目的は何ですか？",
+    "choices": [
+      { "text": "JSONのキー名とC Sharp のプロパティ名が異なる場合にマッピングするため" },
+      { "text": "シリアライズ時にプロパティ名の表記形式を統一するため" },
+      { "text": "JSON変換時にプロパティの値の形式を制御するため" },
+      { "text": "JSONシリアライズの対象プロパティを指定するため" }
+    ],
+    "answer": 0
+  },
+  {
+    "question": "JsonIgnore属性をプロパティに適用すると、どのような動作になりますか？",
+    "choices": [
+      { "text": "JSONのシリアライズおよびデシリアライズ処理からそのプロパティが除外される" },
+      { "text": "JSON変換時にプロパティのアクセス方法（読み取り・書き込み）を制御する" },
+      { "text": "JSON変換時にプロパティの値が初期値として扱われる" },
+      { "text": "JSON変換時にプロパティの値が自動的に既定値にリセットされる" }
+    ],
+    "answer": 0
+  }
+
+  ]
+}
+"""
+
+MESSAGE user """
+作成する数: 3
+コードスニペット:
+@Entity
+@Table(name = "users")
+public class User {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+    
+    @Column(nullable = false, unique = true)
+    private String email;
+    
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    private List<Order> orders;
+}
+"""
+
+MESSAGE assistant """
+{
+  "questions": [
+    {
+      "question": "JPAで@Entityアノテーションをクラスに付ける理由は何ですか？",
+      "choices": [
+        { "text": "クラスをデータベーステーブルにマッピングされるエンティティとして指定するため" },
+        { "text": "クラスをJPAの管理対象としてライフサイクル管理を有効にするため" },
+        { "text": "クラスをデータ転送用オブジェクト（DTO）として扱うため" },
+        { "text": "クラスに永続化用のメタデータを自動生成するため" }
+      ],
+      "answer": 0
+    },
+    {
+      "question": "@GeneratedValue(strategy = GenerationType.IDENTITY)を使用する目的は何ですか？",
+      "choices": [
+        { "text": "データベース側の自動採番機能を利用してIDを生成するため" },
+        { "text": "エンティティ生成時にアプリケーション側で一意なIDを割り当てるため" },
+        { "text": "主キーの生成方法をJPAプロバイダに任せるため" },
+        { "text": "複合主キーを自動的に生成するため" }
+      ],
+      "answer": 0
+    },
+    {
+      "question": "@OneToManyアノテーションで cascade = CascadeType.ALL を指定した場合の意味は何ですか？",
+      "choices": [
+        { "text": "親エンティティに対する永続化操作が、関連する子エンティティにもすべて伝播される" },
+        { "text": "関連する子エンティティが常に即時ロードされるようになる" },
+        { "text": "親子エンティティ間の外部キー制約が自動的に作成される" },
+        { "text": "関連する子エンティティが削除対象から除外される" }
+      ],
+      "answer": 0
+    }
+  ]
+}
+"""
+
+MESSAGE user """
+作成する数: 2
+コードスニペット:
+async function fetchUserData() {
+    try {
+        const response = await fetch('https://api.example.com/user');
+        const data = await response.json();
+        return data;
+    } catch (error) {
+        console.error('Error:', error);
+        throw error;
+    }
+}
+"""
+
+MESSAGE assistant """
+{
+  "questions": [
+    {
+      "question": "JavaScriptでasync/awaitを使用する主な利点は何ですか？",
+      "choices": [
+        { "text": "非同期コードを同期処理のような流れで記述できるため" },
+        { "text": "非同期処理を最適化し、実行効率を向上させるため" },
+        { "text": "ガベージコレクションの発生頻度を減らすため" },
+        { "text": "例外処理を自動的にハンドリングするため" }
+      ],
+      "answer": 0
+    },
+    {
+      "question": "async関数内でawaitキーワードを使用する目的は何ですか？",
+      "choices": [
+        { "text": "Promiseの完了を待ち、同期処理のように受け取るため" },
+        { "text": "現在の関数の処理を強制的に中断するため" },
+        { "text": "Promiseの失敗状態を自動的に無視しプログラムの実行を継続するため" },
+        { "text": "複数の非同期処理を同時に実行するため" }
+      ],
+      "answer": 0
+    }
+  ]
+}
+"""
+
+MESSAGE user """
+作成する数: 2
+コードスニペット:
+class DatabaseConnection:
+    def __enter__(self):
+        self.connection = create_connection()
+        return self.connection
+    
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.connection.close()
+        return False
+
+with DatabaseConnection() as conn:
+    conn.execute("SELECT * FROM users")
+"""
+
+MESSAGE assistant """
+{
+  "questions": [
+    {
+      "question": "Pythonのコンテキストマネージャー（with文）を使用する主な理由は何ですか？",
+      "choices": [
+        {"text": "リソースの取得と解放を自動的に管理するため"},
+        {"text": "メモリ使用量を削減し、コードの実行速度を向上させるため"},
+        {"text": "変数のスコープを制限し、メモリ使用量を削減するため"},
+        {"text": "エラーを自動的に無視し、プログラムの実行を継続するため"}
+      ],
+      "answer": 0
+    },
+    {
+      "question": "__exit__メソッドが必要な理由は何ですか？",
+      "choices": [
+        {"text": "with文のブロックを抜ける際にクリーンアップ処理を実行するため"},
+        {"text": "オブジェクトを初期化するため"},
+        {"text": "リソースが残ってたら、例外を発生させるため"},
+        {"text": "オブジェクトをコピーし、再利用するため"}
+      ],
+      "answer": 0
+    }
+  ]
+}
+"""
+
+MESSAGE user """
+作成する数: 3
+コードスニペット:
+@Component
+public class UserService {
+    private final UserRepository userRepository;
+    
+    @Autowired
+    public UserService(UserRepository userRepository) {
+        this.userRepository = userRepository;
+    }
+    
+    @Transactional
+    public void updateUser(User user) {
+        userRepository.save(user);
+    }
+}
+"""
+
+MESSAGE assistant """
+{
+  "questions": [
+    {
+      "question": "Spring Frameworkで@Componentアノテーションを使用する目的は何ですか？",
+      "choices": [
+        { "text": "クラスをSpringコンテナが管理するBeanとして検出・登録するため" },
+        { "text": "クラスに永続化やシリアライズの設定を付与するため" },
+        { "text": "クラスのインスタンス生成方法をフレームワーク側に委譲するため" },
+        { "text": "クラスの同時実行時の安全性をフレームワークに保証させるため" }
+      ],
+      "answer": 0
+    },
+    {
+      "question": "コンストラクタインジェクションでfinal修飾子を使用する利点は何ですか？",
+      "choices": [
+        { "text": "依存関係を再代入できないようにし、必ず初期化されることを保証できる" },
+        { "text": "オブジェクト生成時の処理が最適化され、実行効率が向上する" },
+        { "text": "ガベージコレクションの負荷を軽減できる" },
+        { "text": "実行時に依存関係を柔軟に差し替えられるようになる" }
+      ],
+      "answer": 0
+    },
+    {
+      "question": "@Transactionalアノテーションをメソッドに付ける理由は何ですか？",
+      "choices": [
+        { "text": "メソッドの処理をトランザクション境界内で管理できるようにするため" },
+        { "text": "メソッドの処理を別スレッドで管理された形で実行するため" },
+        { "text": "メソッドの実行結果をフレームワーク側で再利用するため" },
+        { "text": "メソッドの呼び出し制御をアノテーションで定義するため" }
+      ],
+      "answer": 0
+    }
+
+  ]
+}
+"""
+
+MESSAGE user """
+作成する数: 2
+コードスニペット:
+interface Observer {
+    update(data: any): void;
+}
+
+class Subject {
+    private observers: Observer[] = [];
+    
+    attach(observer: Observer): void {
+        this.observers.push(observer);
+    }
+    
+    notify(data: any): void {
+        this.observers.forEach(observer => observer.update(data));
+    }
+}
+"""
+
+MESSAGE assistant """
+{
+  "questions": [
+    {
+      "question": "Observerデザインパターンを使用する主な目的は何ですか？",
+      "choices": [
+        {"text": "状態変化を複数のオブジェクトに通知するため"},
+        {"text": "オブジェクトの生成を管理するため"},
+        {"text": "オブジェクトの構造を簡素化するため"},
+        {"text": "オブジェクトのアクセス権限を制御するため"}
+      ],
+      "answer": 0
+    },
+    {
+      "question": "通知を受け取る側が共通のインターフェースを実装している設計の利点として最も適切なのはどれですか？",
+      "choices": [
+        { "text": "通知側が実装の違いを意識せずに扱える" },
+        { "text": "共有の通知処理の実行速度が向上する" },
+        { "text": "メモリ使用量を圧倒的に削減できる" },
+        { "text": "通知処理の順序を保証できる" }
+      ],
+      "answer": 0
+    }
+  ]
+}
+"""
+
+MESSAGE user """
+作成する数: 2
+コードスニペット:
+func performTask() {
+    DispatchQueue.global(qos: .background).async {
+        let result = heavyComputation()
+        
+        DispatchQueue.main.async {
+            updateUI(with: result)
+        }
+    }
+}
+"""
+
+MESSAGE assistant """
+{
+  "questions": [
+    {
+      "question": "重い計算処理をバックグラウンドキューで実行する理由は何ですか？",
+      "choices": [
+        {"text": "メインスレッドをブロックせず、アプリの応答性を維持するため"},
+        {"text": "バクグラウンドの最適化により、計算速度が速くなるため"},
+        {"text": "メモリやCPUの使用量が削減され、パフォーマンスが向上するため"},
+        {"text": "エラーが発生するたび、アプリが落ちないようにするため"}
+      ],
+      "answer": 0
+    },
+    {
+      "question": "UI更新をDispatchQueue.mainで実行する必要がある理由は何ですか？",
+      "choices": [
+        {"text": "UI更新はメインスレッドでのみ安全に実行できるため"},
+        {"text": "UI更新の速度が速くなるため"},
+        {"text": "バックグラウンドスレッドによるメモリリークを防ぐため"},
+        {"text": "バックグラウンドスレッドをブロックしないため"}
+      ],
+      "answer": 0
+    }
+  ]
+}
+"""
+
+MESSAGE user """
+作成する数: 3
+コードスニペット:
+public class Singleton {
+    private static Singleton instance;
+    
+    private Singleton() {}
+    
+    public static synchronized Singleton getInstance() {
+        if (instance == null) {
+            instance = new Singleton();
+        }
+        return instance;
+    }
+}
+"""
+
+MESSAGE assistant """
+{
+  "questions": [
+    {
+      "question": "Singletonパターンでコンストラクタをprivateにする主な理由は何ですか？",
+      "choices": [
+        { "text": "外部から新しいインスタンスを生成できないようにするため" },
+        { "text": "オブジェクトの生成処理を高速化するため" },
+        { "text": "クラスの継承を制限しやすくするため" },
+        { "text": "メモリ管理を自動化しやすくするため" }
+      ],
+      "answer": 0
+    },
+    {
+      "question": "メソッドにsynchronizedキーワードを付ける主な目的は何ですか？",
+      "choices": [
+        { "text": "マルチスレッド環境で複数のインスタンスが作成されるのを防ぐため" },
+        { "text": "Synchronizeすることで、メソッドの実行速度を向上させるため" },
+        { "text": "自動ガーベジコレクションによることで、メモリリークを防ぐため" },
+        { "text": "非同期処理を同期処理に変換するため" }
+      ],
+      "answer": 0
+    },
+    {
+      "question": "ある設計で、クラスの外部からインスタンス生成を禁止する目的として最も適切なのはどれですか？",
+      "choices": [
+        { "text": "生成数を制御するため" },
+        { "text": "処理速度を上げるため" },
+        { "text": "継承関係を単純にするため" },
+        { "text": "ガベージコレクションを防ぐため" }
+      ],
+      "answer": 0
+    }
+  ]
+}
+"""
+
+MESSAGE user """
+作成する数: 2
+コードスニペット:
+@RestController
+@RequestMapping("/api/users")
+public class UserController {
+    
+    @GetMapping("/{id}")
+    public ResponseEntity<User> getUser(@PathVariable Long id) {
+        User user = userService.findById(id);
+        return ResponseEntity.ok(user);
+    }
+    
+    @PostMapping
+    public ResponseEntity<User> createUser(@Valid @RequestBody User user) {
+        User created = userService.create(user);
+        return ResponseEntity.status(HttpStatus.CREATED).body(created);
+    }
+}
+"""
+
+MESSAGE assistant """
+{
+  "questions": [
+    {
+      "question": "Spring MVCで@RestControllerを使うと、コントローラの振る舞いとして最も適切なのはどれですか？",
+      "choices": [
+        { "text": "戻り値がそのままレスポンスとして返される" },
+        { "text": "画面遷移用のビュー名が返される" },
+        { "text": "データベース操作が自動で行われる" },
+        { "text": "セキュリティ設定が自動で有効になる" }
+      ],
+      "answer": 0
+    },
+   {
+      "question": "@Validを@RequestBodyと併用した場合に得られる振る舞いとして最も適切なのはどれですか？",
+      "choices": [
+        { "text": "受け取ったデータの内容が条件に合うか検査される" },
+        { "text": "JSONが自動的に文字列へ変換される" },
+        { "text": "通信内容が暗号化される" },
+        { "text": "リクエストが自動的に保存される" }
+      ],
+      "answer": 0
+    }
+  ]
+}
+"""
+
+MESSAGE user """
+作成する数: 2
+コードスニペット:
+const [count, setCount] = useState(0);
+
+useEffect(() => {
+    document.title = `Count: ${count}`;
+    
+    return () => {
+        console.log('Cleanup');
+    };
+}, [count]);
+"""
+
+MESSAGE assistant """
+{
+  "questions": [
+   {
+      "question": "ReactのuseEffectフックで依存配列（第2引数）を指定する目的は何ですか？",
+      "choices": [
+        { "text": "エフェクトが実行される条件を決めるため" },
+        { "text": "メモリ管理を自動化するため" },
+        { "text": "再レンダリングを完全に防ぐため" },
+        { "text": "処理を非同期で実行するため" }
+      ],
+      "answer": 0
+    },
+    {
+      "question": "useEffectから関数を返す主な目的は何ですか？",
+      "choices": [
+        { "text": "不要になった処理を後で片付けるため" },
+        { "text": "エフェクトの実行を中断するため" },
+        { "text": "例外処理を行うため" },
+        { "text": "描画処理を高速化するため" }
+      ],
+      "answer": 0
+    }
+  ]
+}
+"""
+
+
+MESSAGE user """
+作成する数: 3
+コードスニペット:
+CREATE TABLE orders (
+    order_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    order_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    total_amount DECIMAL(10, 2) NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    INDEX idx_user_order (user_id, order_date)
+);
+"""
+
+MESSAGE assistant """
+{
+  "questions": [
+    {
+      "question": "MySQLでAUTO_INCREMENTを指定したカラムの振る舞いとして正しいのはどれですか？",
+      "choices": [
+        { "text": "新しい行ごとに値が自動で割り当てられる" },
+        { "text": "値が暗号化されて保存される" },
+        { "text": "値がランダムに生成される" },
+        { "text": "値が常に再利用される" }
+      ],
+      "answer": 0
+    },
+    {
+      "question": "FOREIGN KEYにON DELETE CASCADEを指定した場合に起こる動作はどれですか？",
+      "choices": [
+        { "text": "参照元の行も自動で削除される" },
+        { "text": "削除操作が拒否される" },
+        { "text": "削除履歴が保存される" },
+        { "text": "削除処理が遅延実行される" }
+      ],
+      "answer": 0
+    },
+    {
+      "question": "複合インデックス（user_id, order_date）が効果を発揮しやすいのはどのような場合ですか？",
+      "choices": [
+        { "text": "両方のカラムを条件に検索するとき" },
+        { "text": "すべての行を取得するとき" },
+        { "text": "INSERTのみを行うとき" },
+        { "text": "データを暗号化するとき" }
+      ],
+      "answer": 0
+    }
+  ]
+}
+"""
+
+MESSAGE user """
+作成する数: 3
+コードスニペット:
+public class Account {
+    private double balance;
+    
+    public synchronized void deposit(double amount) {
+        balance += amount;
+    }
+    
+    public synchronized void withdraw(double amount) throws InsufficientFundsException {
+        if (balance < amount) {
+            throw new InsufficientFundsException("残高不足");
+        }
+        balance -= amount;
+    }
+    
+    public synchronized double getBalance() {
+        return balance;
+    }
+}
+"""
+
+MESSAGE assistant """
+{
+  "questions": [
+    {
+      "question": "synchronizedが必要になる主な理由は何ですか？",
+      "choices": [
+        { "text": "同時に複数の処理が実行されないようにするため" },
+        { "text": "メソッドの処理を高速化するため" },
+        { "text": "例外処理を自動化するため" },
+        { "text": "インスタンス生成を制限するため" }
+      ],
+      "answer": 0
+    },
+    {
+      "question": "残高不足を表す専用の例外を用意する利点として最も適切なのはどれですか？",
+      "choices": [
+        { "text": "エラーの意味を明確にできる" },
+        { "text": "処理速度を向上できる" },
+        { "text": "メモリ使用量を減らせる" },
+        { "text": "例外発生を防げる" }
+      ],
+      "answer": 0
+    },
+    {
+      "question": "残高を取得するメソッドにもsynchronizedを付ける理由は何ですか？",
+      "choices": [
+        { "text": "更新中の不整合な値を避けるため" },
+        { "text": "取得処理の処理を速くするため" },
+        { "text": "例外が発生しても、次の処理に影響を与えないため" },
+        { "text": "メモリ解放を行うため" }
+      ],
+      "answer": 0
+    }
+  ]
+}
+"""
+
+MESSAGE user """
+作成する数: 2
+コードスニペット:
+public interface PaymentProcessor {
+    boolean processPayment(double amount);
+    void refund(String transactionId);
+}
+
+public class CreditCardProcessor implements PaymentProcessor {
+    @Override
+    public boolean processPayment(double amount) {
+        // クレジットカード処理
+        return true;
+    }
+    
+    @Override
+    public void refund(String transactionId) {
+        // 返金処理
+    }
+}
+"""
+
+MESSAGE assistant """
+{
+  "questions": [
+    {
+      "question": "interfaceを使うことで得られる効果として最も適切なのはどれですか？",
+      "choices": [
+        { "text": "実装を変更しても同じ呼び出し方ができる" },
+        { "text": "処理の実行速度がいつでも安定する" },
+        { "text": "同じinterfaceを実装することで、メモリ消費を抑えられる" },
+        { "text": "interfaceにより、クラス構造が単純になる" }
+      ],
+      "answer": 0
+    },
+    {
+      "question": "@Overrideアノテーションを付ける目的として適切なのはどれですか？",
+      "choices": [
+        { "text": "メソッドの定義ミスを検出しやすくする" },
+        { "text": "親クラスのメソードを上書きすることで、実行時の処理を高速化する" },
+        { "text": "複数スレッド環境でも、スレッド安全性を確保する" },
+        { "text": "@Overrideアノテーションを付けることで、例外処理を省略できる" }
+      ],
+      "answer": 0
+    }
+  ]
+}
+"""
+
+MESSAGE user """
+作成する数: 3
+コードスニペット:
+<?php
+class Database {
+    private static $instance = null;
+    private $pdo;
+    
+    private function __construct() {
+        $this->pdo = new PDO('mysql:host=localhost;dbname=mydb', 'user', 'pass');
+        $this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    }
+    
+    public static function getInstance() {
+        if (self::$instance === null) {
+            self::$instance = new Database();
+        }
+        return self::$instance;
+    }
+    
+    public function query($sql, $params = []) {
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+}
+?>
+"""
+
+MESSAGE assistant """
+{
+  "questions": [
+    {
+      "question": "PHPでPDOのエラーモードを例外ベースに設定する設計上のメリットはどれですか？",
+      "choices": [
+        { "text": "エラーを例外として扱える" },
+        { "text": "すべてのSQL文が自動的に最適化され、高速に実行されるようになるため" },
+        { "text": "データベース接続が常に成功するように内部的に再試行が行われるため" },
+        { "text": "エラー発生時に自動でログ保存と管理画面通知が行われる仕組みになるため" }
+      ],
+      "answer": 0
+    },
+    {
+      "question": "データベースアクセスでprepareを利用する主な理由はどれですか？",
+      "choices": [
+        { "text": "入力値を安全に扱える" },
+        { "text": "クエリ結果が自動的にキャッシュされ、同じSQLが再利用されるため" },
+        { "text": "データベース接続数を減らし、サーバー全体の負荷を軽減するため" },
+        { "text": "SQL文の構文エラーを実行前に完全に検出できるようにするため" }
+      ],
+      "answer": 0
+    },
+    {
+      "question": "Singletonパターンでインスタンスの生成を制御する目的として最も適切なのはどれですか？",
+      "choices": [
+        { "text": "インスタンスを1つに保つ" },
+        { "text": "オブジェクト生成を毎回やり直すことで最新の状態を常に反映させるため" },
+        { "text": "クラスの責務を分割し、疎結合な設計を必ず実現するため" },
+        { "text": "メモリ管理をフレームワーク側に完全に委譲する設計方針だから" }
+      ],
+      "answer": 0
+    }
+  ]
+}
+"""
+
+MESSAGE user """
+作成する数: 2
+コードスニペット:
+<?php
+session_start();
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $token = $_POST['csrf_token'] ?? '';
+    
+    if (!hash_equals($_SESSION['csrf_token'], $token)) {
+        die('Invalid CSRF token');
+    }
+    
+    // フォーム処理
+    $username = filter_input(INPUT_POST, 'username', FILTER_SANITIZE_STRING);
+}
+
+$_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+?>
+"""
+
+MESSAGE assistant """
+{
+  "questions": [
+    {
+      "question": "CSRFトークンを使う主な理由として正しいのはどれですか？",
+      "choices": [
+        { "text": "正規のユーザーからのリクエストであることを確認できる" },
+        { "text": "パスワードやセッション情報を暗号化し、自動で安全に管理するため" },
+        { "text": "ユーザーのログイン状態を自動的に延長できるようにするため" },
+        { "text": "フォーム送信やデータベース操作を高速化するため" }
+      ],
+      "answer": 0
+    },
+    {
+      "question": "filter_input()で入力をサニタイズする目的として最も適切なのはどれですか？",
+      "choices": [
+        { "text": "HTMLタグや特殊文字を取り除き、XSS攻撃を防ぐ" },
+        { "text": "入力データを暗号化して安全に保存できるようにする" },
+        { "text": "文字列の長さや形式を自動でチェックする" },
+        { "text": "入力文字をすべて大文字に変換して統一する" }
+      ],
+      "answer": 0
+    }
+  ]
+}
+"""
+
+MESSAGE user """
+作成する数: 3
+コードスニペット:
+const int LED_PIN = 13;
+const int SENSOR_PIN = A0;
+volatile bool buttonPressed = false;
+
+void setup() {
+    pinMode(LED_PIN, OUTPUT);
+    pinMode(SENSOR_PIN, INPUT);
+    Serial.begin(9600);
+    attachInterrupt(digitalPinToInterrupt(2), handleButton, FALLING);
+}
+
+void loop() {
+    if (buttonPressed) {
+        digitalWrite(LED_PIN, HIGH);
+        buttonPressed = false;
+    }
+    
+    int sensorValue = analogRead(SENSOR_PIN);
+    Serial.println(sensorValue);
+    delay(100);
+}
+
+void handleButton() {
+    buttonPressed = true;
+}
+"""
+
+MESSAGE assistant """
+{
+  "questions": [
+    {
+      "question": "volatileキーワードを変数に付ける主な理由は何ですか？",
+      "choices": [
+        { "text": "割り込みや他スレッドから値が変更されても正しく読み書きできる" },
+        { "text": "変数を常に高速にメモリに置き、処理を最適化するため" },
+        { "text": "変数を読み取り専用にして安全性を高めるため" },
+        { "text": "変数の消費メモリを減らすため" }
+      ],
+      "answer": 0
+    },
+    {
+      "question": "attachInterrupt()を使う利点として最も適切なのはどれですか？",
+      "choices": [
+        { "text": "外部の変化（ボタンやセンサー）に即座に反応できる" },
+        { "text": "処理速度を最大化し、loop()の実行時間を短縮するため" },
+        { "text": "消費電力を自動で削減するため" },
+        { "text": "複数のセンサーから同時に値を取得するため" }
+      ],
+      "answer": 0
+    },
+    {
+      "question": "割り込みハンドラを短く保つべき理由は何ですか？",
+      "choices": [
+        { "text": "長い処理は他の割り込みをブロックしてしまうため" },
+        { "text": "コードの可読性を上げるため" },
+        { "text": "割り込みのハンドラが長いと、他の割り込みが遅延しシステム全体の応答性が向上するため" },
+        { "text": "コードの行が減ることにより、コンパイルを高速化するため" }
+      ],
+      "answer": 0
+    }
+  ]
+}
+"""
+
+MESSAGE user """
+作成する数: 2
+コードスニペット:
+#include <Servo.h>
+
+Servo myServo;
+const int SERVO_PIN = 9;
+const int TRIG_PIN = 7;
+const int ECHO_PIN = 8;
+
+void setup() {
+    myServo.attach(SERVO_PIN);
+    pinMode(TRIG_PIN, OUTPUT);
+    pinMode(ECHO_PIN, INPUT);
+}
+
+long getDistance() {
+    digitalWrite(TRIG_PIN, LOW);
+    delayMicroseconds(2);
+    digitalWrite(TRIG_PIN, HIGH);
+    delayMicroseconds(10);
+    digitalWrite(TRIG_PIN, LOW);
+    
+    long duration = pulseIn(ECHO_PIN, HIGH);
+    return duration * 0.034 / 2;
+}
+
+void loop() {
+    long distance = getDistance();
+    int angle = map(distance, 0, 100, 0, 180);
+    myServo.write(angle);
+    delay(50);
+}
+"""
+
+MESSAGE assistant """
+{
+  "questions": [
+    {
+      "question": "map()関数を使う主な理由として適切なのはどれですか？",
+      "choices": [
+        { "text": "値を別の範囲に比例変換できる" },
+        { "text": "配列やリストを自動で生成できる" },
+        { "text": "値を整数型に変換し、メモリ使用量を減らす" },
+        { "text": "値を暗号化して安全に扱う" }
+      ],
+      "answer": 0
+    },
+    {
+      "question": "超音波センサーでpulseIn()関数を使う理由として最も正しいのはどれですか？",
+      "choices": [
+        { "text": "エコーピンのHIGH状態の時間を測定し、距離を計算できる" },
+        { "text": "センサーの電力供給やリセットを自動化できる" },
+        { "text": "ノイズ除去や信号の平滑化を自動で行う" },
+        { "text": "センサーの読み取り速度を大幅に向上させる" }
+      ],
+      "answer": 0
+    }
+  ]
+}
+"""
+
+MESSAGE user """
+
+作成する数: 3
+コードスニペット:
+<?php
+session_start();
+$config = require_once('../dbconfig.inc');
+
+$goodID   = $_POST['goodID'] ?? '';
+$quantity = (int)($_POST['quantity'] ?? 1);
+
+$mysqli = new mysqli(
+    $config['db_host'],
+    $config['db_user'],
+    $config['db_pass'],
+    $config['db_name']
+);
+
+if ($mysqli->connect_error) {
+    die("データベース接続失敗: " . htmlspecialchars($mysqli->connect_error));
+}
+
+$query = $mysqli->prepare("SELECT * FROM Goods WHERE GoodsID = ?");
+$query->bind_param('s', $goodID);
+$query->execute();
+$result = $query->get_result();
+$row = $result->fetch_assoc();
+
+if (!$row) {
+    die("商品が見つかりません");
+}
+
+$price = (int)$row['PRICE'];
+$total = $price * $quantity;
+?>
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>購入確認</title>
+</head>
+<body>
+
+<h2>購入内容確認</h2>
+
+<table border="1">
+    <tr>
+        <th>商品名</th>
+        <td><?= htmlspecialchars($row['GoodsName']) ?></td>
+    </tr>
+    <tr>
+        <th>単価</th>
+        <td><?= number_format($price) ?> 円</td>
+    </tr>
+    <tr>
+        <th>数量</th>
+        <td><?= htmlspecialchars($quantity) ?></td>
+    </tr>
+    <tr>
+        <th>合計金額</th>
+        <td><strong><?= number_format($total) ?> 円</strong></td>
+    </tr>
+</table>
+
+<br>
+
+<form action="CartDisplay.php" method="post">
+    <input type="hidden" name="goodID" value="<?= htmlspecialchars($goodID) ?>">
+    <input type="hidden" name="quantity" value="<?= htmlspecialchars($quantity) ?>">
+    <input type="hidden" name="total" value="<?= htmlspecialchars($total) ?>">
+
+    <input type="submit" value="確定する">
+</form>
+
+<br>
+<a href="javascript:history.back()">← 戻る</a>
+
+</body>
+</html>
+"""
+
+MESSAGE assistant """
+{
+  "questions": [
+    {
+      "question": "prepared statementを使用する主な理由として最も適切なのはどれですか？",
+      "choices": [
+        { "text": "SQLインジェクション攻撃を防ぐため" },
+        { "text": "クエリの実行速度を大幅に向上させるため" },
+        { "text": "データベース接続数を自動で管理するため" },
+        { "text": "SQL文の構文エラーを事前に検出するため" }
+      ],
+      "answer": 0
+    },
+    {
+      "question": "htmlspecialchars()関数を使用する目的として最も適切なのはどれですか？",
+      "choices": [
+        { "text": "XSS攻撃を防ぐためにHTML特殊文字をエスケープする" },
+        { "text": "文字列の長さを制限するため" },
+        { "text": "データベースに保存する前に文字列を暗号化するため" },
+        { "text": "文字列を自動的にフォーマットするため" }
+      ],
+      "answer": 0
+    },
+    {
+      "question": "データベース接続エラー時に接続エラーメッセージを表示することのリスクとして最も適切なのはどれですか？",
+      "choices": [
+        { "text": "攻撃者にシステムの内部情報が漏れる可能性がある" },
+        { "text": "ユーザー体験が向上し、アプリケーションの信頼性が高まる" },
+        { "text": "接続エラーが自動的に修正される" },
+        { "text": "データベースのパフォーマンスが向上する" }
+      ],
+      "answer": 0
+    }
+  ]
+}
+"""
+
+MESSAGE user """
+作成する数: 3
+コードスニペット:
+<?php
+class Good
+{
+    public string $goodsID;
+    public string $goodsName;
+    public string $price;
+    public string $categoryID;
+    public ?string $costPrice;
+    public string $makerID;
+    public string $stock;
+    public string $imageName;
+
+    public function __construct(array $row)
+    {
+        $this->goodsID = $row['GoodsID'];
+        $this->goodsName = $row['GoodsName'];
+        $this->price = $row['PRICE'] ?? '不明';
+        $this->categoryID = $row['CategoryID'];
+        $this->costPrice = $row['CostPrice'] ?? null;
+        $this->makerID = $row['MakerID'];
+        $this->stock = $row['Stock'];
+        $this->imageName = $row['ImageName'] ?? 'no_image.png';
+    }
+}
+
+$goodID = $_GET['goodID'] ?? '';
+$query = $mysqli->prepare("SELECT * FROM Goods WHERE GoodsID = ?");
+$query->bind_param('s', $goodID);
+$query->execute();
+$result = $query->get_result();
+$row = $result->fetch_assoc();
+$good = new Good($row);
+?>
+
+<form action="confirmation.php" method="post">
+    <input type="hidden" name="goodID" value="<?= htmlspecialchars($good->goodsID) ?>">
+    <label for="quantity">数量:</label>
+    <input type="number" id="quantity" name="quantity" value="1" min="1" max="<?= htmlspecialchars($good->stock) ?>">
+    <input type="submit" value="買い物かごに入れる">
+</form>
+"""
+
+MESSAGE assistant """
+{
+  "questions": [
+    {
+      "question": "クラスのコンストラクタで連想配列を受け取り、プロパティに割り当てる設計の利点として最も適切なのはどれですか？",
+      "choices": [
+        { "text": "データベースから取得した行データを簡単にオブジェクト化できる" },
+        { "text": "プロパティの型安全性が自動的に保証される" },
+        { "text": "オブジェクトのメモリ使用量が大幅に削減される" },
+        { "text": "クラスの継承関係が自動的に最適化される" }
+      ],
+      "answer": 0
+    },
+    {
+      "question": "フォームで数量入力フィールドにmin属性とmax属性を設定する主な理由は何ですか？",
+      "choices": [
+        { "text": "ユーザーが選択できる数量の範囲を制限するため" },
+        { "text": "入力された数量を自動的に暗号化するため" },
+        { "text": "数量入力フィールドの表示スタイルを統一するため" },
+        { "text": "数量入力フィールドの値を自動的にキャッシュするため" }
+      ],
+      "answer": 0
+    },
+    {
+      "question": "フォーム送信時にhiddenフィールドで商品IDを送信する目的として最も適切なのはどれですか？",
+      "choices": [
+        { "text": "選択された商品の情報をサーバー側で特定するため" },
+        { "text": "商品IDを暗号化して安全に送信するため" },
+        { "text": "フォームの送信速度を向上させるため" },
+        { "text": "商品IDの値を自動的に検証するため" }
+      ],
+      "answer": 0
+    }
+  ]
+}
+"""
+
+
+MESSAGE user """
+作成する数: 5
+コードスニペット:
+<?php
+session_start();
+$config = require_once('../dbconfig.inc');
+
+$goodID   = $_POST['goodID'] ?? '';
+$quantity = (int)($_POST['quantity'] ?? 1);
+
+$mysqli = new mysqli(
+    $config['db_host'],
+    $config['db_user'],
+    $config['db_pass'],
+    $config['db_name']
+);
+
+if ($mysqli->connect_error) {
+    die("データベース接続失敗: " . htmlspecialchars($mysqli->connect_error));
+}
+
+$query = $mysqli->prepare("SELECT * FROM Goods WHERE GoodsID = ?");
+$query->bind_param('s', $goodID);
+$query->execute();
+$result = $query->get_result();
+$row = $result->fetch_assoc();
+
+if (!$row) {
+    die("商品が見つかりません");
+}
+
+$price = (int)$row['PRICE'];
+$total = $price * $quantity;
+?>
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>購入確認</title>
+</head>
+<body>
+
+<h2>購入内容確認</h2>
+
+<table border="1">
+    <tr>
+        <th>商品名</th>
+        <td><?= htmlspecialchars($row['GoodsName']) ?></td>
+    </tr>
+    <tr>
+        <th>単価</th>
+        <td><?= number_format($price) ?> 円</td>
+    </tr>
+    <tr>
+        <th>数量</th>
+        <td><?= htmlspecialchars($quantity) ?></td>
+    </tr>
+    <tr>
+        <th>合計金額</th>
+        <td><strong><?= number_format($total) ?> 円</strong></td>
+    </tr>
+</table>
+
+<br>
+
+<form action="CartDisplay.php" method="post">
+    <input type="hidden" name="goodID" value="<?= htmlspecialchars($goodID) ?>">
+    <input type="hidden" name="quantity" value="<?= htmlspecialchars($quantity) ?>">
+    <input type="hidden" name="total" value="<?= htmlspecialchars($total) ?>">
+
+    <input type="submit" value="確定する">
+</form>
+
+<br>
+<a href="javascript:history.back()">← 戻る</a>
+
+</body>
+</html>
+
+"""
+
+MESSAGE assistant """
+{
+  "questions": [
+    {
+      "question": "データベース接続エラー時に接続エラーメッセージを表示することのリスクとして最も適切なのはどれですか？",
+      "choices": [
+        { "text": "攻撃者にシステムの内部情報が漏れる可能性がある" },
+        { "text": "ユーザー体験が向上し、アプリケーションの信頼性が高まる" },
+        { "text": "接続エラーが自動的に修正される" },
+        { "text": "データベースのパフォーマンスが向上する" }
+      ],
+      "answer": 0
+    },
+    {
+      "question": "prepared statementを使用する主な理由として最も適切なのはどれですか？",
+      "choices": [
+        { "text": "SQLインジェクション攻撃を防ぐため" },
+        { "text": "クエリの実行速度を大幅に向上させるため" },
+        { "text": "データベース接続数を自動で管理するため" },
+        { "text": "SQL文の構文エラーを事前に検出するため" }
+      ],
+      "answer": 0
+    },
+    {
+      "question": "htmlspecialchars()関数を使用する目的として最も適切なのはどれですか？",
+      "choices": [
+        { "text": "XSS攻撃を防ぐためにHTML特殊文字をエスケープする" },
+        { "text": "文字列の長さを制限するため" },
+        { "text": "データベースに保存する前に文字列を暗号化するため" },
+        { "text": "文字列を自動的にフォーマットするため" }
+      ],
+      "answer": 0
+    },
+    {
+      "question": "POSTメソッドでフォームデータを送信する主な理由として最も適切なのはどれですか？",
+      "choices": [
+        { "text": "送信データがURLに表示されず、より安全に扱えるため" },
+        { "text": "フォームデータの送信速度が向上するため" },
+        { "text": "サーバー側で自動的にデータの検証が行われるため" },
+        { "text": "ブラウザのキャッシュ機能が有効になるため" }
+      ],
+      "answer": 0
+    },
+    {
+      "question": "number_format()関数を使用する主な理由として最も適切なのはどれですか？",
+      "choices": [
+        { "text": "数値を見やすい形式で表示するため" },
+        { "text": "数値の計算精度を向上させるため" },
+        { "text": "数値を自動的に暗号化するため" },
+        { "text": "数値の型を文字列に変換するため" }
+      ],
+      "answer": 0
+    }
+  ]
+}
+"""
